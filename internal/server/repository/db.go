@@ -22,6 +22,19 @@ var (
 	ErrInvalidUserOrPassword = errors.New("invalid user or password")
 )
 
+// Repository is a Repository interface.
+type Repository interface {
+	AddUser(ctx context.Context, username string, dk []byte, salt []byte) error
+	GetUser(ctx context.Context, username string) ([]byte, []byte, error)
+	AddForSync(ctx context.Context, data models.UserData, username string) error
+	GetUserData(ctx context.Context, username string) (*models.UserData, error)
+	SyncLoginAndPass(ctx context.Context) error
+	SyncText(ctx context.Context) error
+	SyncBytes(ctx context.Context) error
+	SyncBankCard(ctx context.Context) error
+	Close()
+}
+
 // Pooler is a Pool interface.
 type Pooler interface {
 	QueryRow(ctx context.Context, sql string, args ...interface{}) pgx.Row
@@ -39,7 +52,7 @@ type DB struct {
 }
 
 // NewDBRepository create new DBRepository.
-func NewRepository(ctx context.Context, logger *zap.Logger, connString string) (Repository, error) {
+func NewRepository(ctx context.Context, logger *zap.Logger, connString string) (*DB, error) {
 	m, err := migrate.New("file://./internal/server/repository/migrations", connString)
 	if err != nil {
 		return nil, fmt.Errorf("can not create migration instance: %w", err)

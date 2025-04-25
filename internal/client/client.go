@@ -49,37 +49,32 @@ func NewClient() error {
 	auth := tview.NewForm()
 	data := tview.NewFlex().SetDirection(tview.FlexRow)
 
-	pages := tview.NewPages()
-	pages.AddAndSwitchToPage("Menu", menu, true)
-	pages.AddPage("Registration", registration, true, false)
-	pages.AddPage("Auth", auth, true, false)
-	pages.AddPage("Data", data, true, false)
+	pages := tview.NewPages().
+		AddAndSwitchToPage("Menu", menu, true).
+		AddPage("Registration", registration, true, false).
+		AddPage("Auth", auth, true, false).
+		AddPage("Data", data, true, false)
 
 	// --- MENU ---
-	menu.AddTextView("Goph keeper", fmt.Sprintf("version: %s, date of build: %s", version, dateOfBuild), 100, 1, true, false)
-	menu.AddButton("Registration", func() {
-		pages.SwitchToPage("Registration")
-	})
-	menu.AddButton("Auth", func() {
-		pages.SwitchToPage("Auth")
-	})
-	menu.AddButton("Exit", func() {
-		app.Stop()
-	})
+	menu.AddTextView("Goph keeper", fmt.Sprintf("version: %s, date of build: %s", version, dateOfBuild), 100, 1, true, false).
+		AddButton("Registration", func() {
+			pages.SwitchToPage("Registration")
+		}).
+		AddButton("Auth", func() {
+			pages.SwitchToPage("Auth")
+		}).
+		AddButton("Exit", func() {
+			app.Stop()
+		})
 
 	// --- DATA ---
 	flex := tview.NewFlex()
 
-	loginAndPassesFlex := tview.NewFlex().SetDirection(tview.FlexRow)
 	loginAndPassesTable.SetBorderPadding(1, 1, 1, 1)
-	loginAndPassesTable.SetCell(0, 0, tview.NewTableCell("ID").SetAlign(tview.AlignCenter).SetTextColor(tcell.ColorYellow))
-	loginAndPassesTable.SetCell(0, 1, tview.NewTableCell("Login").SetAlign(tview.AlignCenter).SetTextColor(tcell.ColorYellow))
-	loginAndPassesTable.SetCell(0, 2, tview.NewTableCell("Pasword").SetAlign(tview.AlignCenter).SetTextColor(tcell.ColorYellow))
 
 	var loginAndPassesEditing bool
 	var loginAndPassesCurrentRow int
 	var loginAndPassesCurrentCol int
-	var loginAndPassesCurrentValue string
 	var loginAndPassesInputField *tview.InputField
 
 	loginAndPassesInputField = tview.NewInputField().
@@ -113,45 +108,38 @@ func NewClient() error {
 			return
 		}
 
-		cell := loginAndPassesTable.GetCell(row, column)
 		loginAndPassesCurrentRow, loginAndPassesCurrentCol = row, column
-		loginAndPassesCurrentValue = cell.Text
-
 		loginAndPassesEditing = true
-		loginAndPassesInputField.SetFieldBackgroundColor(tcell.ColorBlue).SetText(loginAndPassesCurrentValue)
+		loginAndPassesInputField.SetFieldBackgroundColor(tcell.ColorBlue).SetText(loginAndPassesTable.GetCell(row, column).Text)
 		app.SetFocus(loginAndPassesInputField)
 	})
 
-	loginAndPassesFlex.AddItem(loginAndPassesTable, 0, 4, false)
-	loginAndPassesForm := tview.NewForm()
-	loginAndPassesForm.AddInputField("Login", "", 10, nil, func(text string) {
-		loginAndPassItem.Login = text
-	})
-	loginAndPassesForm.AddInputField("Password", "", 10, nil, func(text string) {
-		loginAndPassItem.Password = text
-	})
-	loginAndPassesForm.AddButton("Add", func() {
-		row := loginAndPassesTable.GetRowCount()
-		loginAndPasses[row] = models.LoginAndPass{
-			Login:    loginAndPassItem.Login,
-			Password: loginAndPassItem.Password,
-		}
-		loginAndPassesTable.SetCell(row, 1, tview.NewTableCell(loginAndPassItem.Login))
-		loginAndPassesTable.SetCell(row, 2, tview.NewTableCell(loginAndPassItem.Password))
-	})
-	loginAndPassesFlex.AddItem(loginAndPassesForm, 12, 1, false)
-	loginAndPassesFlex.AddItem(loginAndPassesInputField, 0, 1, false)
-	flex.AddItem(loginAndPassesFlex, 0, 1, false)
+	loginAndPassesForm := tview.NewForm().
+		AddInputField("Login", "", 10, nil, func(text string) {
+			loginAndPassItem.Login = text
+		}).
+		AddInputField("Password", "", 10, nil, func(text string) {
+			loginAndPassItem.Password = text
+		}).
+		AddButton("Add", func() {
+			row := loginAndPassesTable.GetRowCount()
+			loginAndPasses[row] = models.LoginAndPass{
+				Login:    loginAndPassItem.Login,
+				Password: loginAndPassItem.Password,
+			}
+			loginAndPassesTable.SetCellSimple(row, 1, loginAndPassItem.Login).
+				SetCellSimple(row, 2, loginAndPassItem.Password)
+		})
+	loginAndPassesFlex := tview.NewFlex().SetDirection(tview.FlexRow).
+		AddItem(loginAndPassesTable, 0, 4, false).
+		AddItem(loginAndPassesForm, 12, 1, false).
+		AddItem(loginAndPassesInputField, 0, 1, false)
 
-	textsFlex := tview.NewFlex().SetDirection(tview.FlexRow)
 	textsTable.SetBorderPadding(1, 1, 1, 1)
-	textsTable.SetCell(0, 0, tview.NewTableCell("ID").SetAlign(tview.AlignCenter).SetTextColor(tcell.ColorYellow))
-	textsTable.SetCell(0, 1, tview.NewTableCell("Text").SetAlign(tview.AlignCenter).SetTextColor(tcell.ColorYellow))
 
 	var textsEditing bool
 	var textsCurrentRow int
 	var textsCurrentCol int
-	var textsCurrentValue string
 	var textsInputField *tview.InputField
 
 	textsInputField = tview.NewInputField().
@@ -184,40 +172,33 @@ func NewClient() error {
 			return
 		}
 
-		cell := textsTable.GetCell(row, column)
 		textsCurrentRow, textsCurrentCol = row, column
-		textsCurrentValue = cell.Text
-
 		textsEditing = true
-		textsInputField.SetFieldBackgroundColor(tcell.ColorBlue).SetText(textsCurrentValue)
+		textsInputField.SetFieldBackgroundColor(tcell.ColorBlue).SetText(textsTable.GetCell(row, column).Text)
 		app.SetFocus(textsInputField)
 	})
 
-	textsFlex.AddItem(textsTable, 0, 4, false)
-	textsForm := tview.NewForm()
-	textsForm.AddInputField("Text", "", 10, nil, func(text string) {
-		textItem.Text = text
-	})
-	textsForm.AddButton("Add", func() {
-		row := textsTable.GetRowCount()
-		texts[row] = models.Text{
-			Text: textItem.Text,
-		}
-		textsTable.SetCell(row, 1, tview.NewTableCell(textItem.Text))
-	})
-	textsFlex.AddItem(textsForm, 12, 1, false)
-	textsFlex.AddItem(textsInputField, 0, 1, false)
-	flex.AddItem(textsFlex, 0, 1, false)
+	textsForm := tview.NewForm().
+		AddInputField("Text", "", 10, nil, func(text string) {
+			textItem.Text = text
+		}).
+		AddButton("Add", func() {
+			row := textsTable.GetRowCount()
+			texts[row] = models.Text{
+				Text: textItem.Text,
+			}
+			textsTable.SetCellSimple(row, 1, textItem.Text)
+		})
+	textsFlex := tview.NewFlex().SetDirection(tview.FlexRow).
+		AddItem(textsTable, 0, 4, false).
+		AddItem(textsForm, 12, 1, false).
+		AddItem(textsInputField, 0, 1, false)
 
-	bytesFlex := tview.NewFlex().SetDirection(tview.FlexRow)
 	bytesTable.SetBorderPadding(1, 1, 1, 1)
-	bytesTable.SetCell(0, 0, tview.NewTableCell("ID").SetAlign(tview.AlignCenter).SetTextColor(tcell.ColorYellow))
-	bytesTable.SetCell(0, 1, tview.NewTableCell("Bytes").SetAlign(tview.AlignCenter).SetTextColor(tcell.ColorYellow))
 
 	var bytesEditing bool
 	var bytesCurrentRow int
 	var bytesCurrentCol int
-	var bytesCurrentValue string
 	var bytesInputField *tview.InputField
 
 	bytesInputField = tview.NewInputField().
@@ -250,43 +231,33 @@ func NewClient() error {
 			return
 		}
 
-		cell := bytesTable.GetCell(row, column)
 		bytesCurrentRow, bytesCurrentCol = row, column
-		bytesCurrentValue = cell.Text
-
 		bytesEditing = true
-		bytesInputField.SetFieldBackgroundColor(tcell.ColorBlue).SetText(bytesCurrentValue)
+		bytesInputField.SetFieldBackgroundColor(tcell.ColorBlue).SetText(bytesTable.GetCell(row, column).Text)
 		app.SetFocus(bytesInputField)
 	})
 
-	bytesFlex.AddItem(bytesTable, 0, 4, false)
-	bytesForm := tview.NewForm()
-	bytesForm.AddInputField("Bytes", "", 10, nil, func(text string) {
-		bytesItem.Bytes = text
-	})
-	bytesForm.AddButton("Add", func() {
-		row := bytesTable.GetRowCount()
-		bytes[row] = models.Bytes{
-			Bytes: bytesItem.Bytes,
-		}
-		bytesTable.SetCell(row, 1, tview.NewTableCell(string(bytesItem.Bytes)))
-	})
-	bytesFlex.AddItem(bytesForm, 12, 1, false)
-	bytesFlex.AddItem(bytesInputField, 0, 1, false)
-	flex.AddItem(bytesFlex, 0, 1, false)
+	bytesForm := tview.NewForm().
+		AddInputField("Bytes", "", 10, nil, func(text string) {
+			bytesItem.Bytes = text
+		}).
+		AddButton("Add", func() {
+			row := bytesTable.GetRowCount()
+			bytes[row] = models.Bytes{
+				Bytes: bytesItem.Bytes,
+			}
+			bytesTable.SetCellSimple(row, 1, string(bytesItem.Bytes))
+		})
+	bytesFlex := tview.NewFlex().SetDirection(tview.FlexRow).
+		AddItem(bytesTable, 0, 4, false).
+		AddItem(bytesForm, 12, 1, false).
+		AddItem(bytesInputField, 0, 1, false)
 
-	bankCardsFlex := tview.NewFlex().SetDirection(tview.FlexRow)
 	bankCardsTable.SetBorderPadding(1, 1, 1, 1)
-	bankCardsTable.SetCell(0, 0, tview.NewTableCell("ID").SetAlign(tview.AlignCenter).SetTextColor(tcell.ColorYellow))
-	bankCardsTable.SetCell(0, 1, tview.NewTableCell("Number").SetAlign(tview.AlignCenter).SetTextColor(tcell.ColorYellow))
-	bankCardsTable.SetCell(0, 2, tview.NewTableCell("Card holder name").SetAlign(tview.AlignCenter).SetTextColor(tcell.ColorYellow))
-	bankCardsTable.SetCell(0, 3, tview.NewTableCell("Expiration date").SetAlign(tview.AlignCenter).SetTextColor(tcell.ColorYellow))
-	bankCardsTable.SetCell(0, 4, tview.NewTableCell("CVV").SetAlign(tview.AlignCenter).SetTextColor(tcell.ColorYellow))
 
 	var bankCardsEditing bool
 	var bankCardsCurrentRow int
 	var bankCardsCurrentCol int
-	var bankCardsCurrentValue string
 	var bankCardsInputField *tview.InputField
 
 	bankCardsInputField = tview.NewInputField().
@@ -322,222 +293,219 @@ func NewClient() error {
 			return
 		}
 
-		cell := bankCardsTable.GetCell(row, column)
 		bankCardsCurrentRow, bankCardsCurrentCol = row, column
-		bankCardsCurrentValue = cell.Text
-
 		bankCardsEditing = true
-		bankCardsInputField.SetFieldBackgroundColor(tcell.ColorBlue).SetText(bankCardsCurrentValue)
+		bankCardsInputField.SetFieldBackgroundColor(tcell.ColorBlue).SetText(bankCardsTable.GetCell(row, column).Text)
 		app.SetFocus(bankCardsInputField)
 	})
 
-	bankCardsFlex.AddItem(bankCardsTable, 0, 4, false)
-	bankCardsForm := tview.NewForm()
-	bankCardsForm.AddInputField("Number", "", 10, nil, func(text string) {
-		bankCardItem.Number = text
-	})
-	bankCardsForm.AddInputField("Card holder name", "", 10, nil, func(text string) {
-		bankCardItem.CardHolderName = text
-	})
-	bankCardsForm.AddInputField("Expiration date", "", 10, nil, func(text string) {
-		bankCardItem.ExpirationDate = text
-	})
-	bankCardsForm.AddInputField("CVV", "", 10, nil, func(text string) {
-		bankCardItem.CVV = text
-	})
-	bankCardsForm.AddButton("Add", func() {
-		row := bankCardsTable.GetRowCount()
-		bankCards[row] = models.BankCard{
-			Number:         bankCardItem.Number,
-			CardHolderName: bankCardItem.CardHolderName,
-			ExpirationDate: bankCardItem.ExpirationDate,
-			CVV:            bankCardItem.CVV,
-		}
-		bankCardsTable.SetCell(row, 1, tview.NewTableCell(bankCardItem.Number))
-		bankCardsTable.SetCell(row, 2, tview.NewTableCell(bankCardItem.CardHolderName))
-		bankCardsTable.SetCell(row, 3, tview.NewTableCell(bankCardItem.ExpirationDate))
-		bankCardsTable.SetCell(row, 4, tview.NewTableCell(bankCardItem.CVV))
-	})
-	bankCardsFlex.AddItem(bankCardsForm, 12, 1, false)
-	bankCardsFlex.AddItem(bankCardsInputField, 0, 1, false)
-	flex.AddItem(bankCardsFlex, 0, 1, false)
+	bankCardsForm := tview.NewForm().
+		AddInputField("Number", "", 10, nil, func(text string) {
+			bankCardItem.Number = text
+		}).
+		AddInputField("Card holder name", "", 10, nil, func(text string) {
+			bankCardItem.CardHolderName = text
+		}).
+		AddInputField("Expiration date", "", 10, nil, func(text string) {
+			bankCardItem.ExpirationDate = text
+		}).
+		AddInputField("CVV", "", 10, nil, func(text string) {
+			bankCardItem.CVV = text
+		}).
+		AddButton("Add", func() {
+			row := bankCardsTable.GetRowCount()
+			bankCards[row] = models.BankCard{
+				Number:         bankCardItem.Number,
+				CardHolderName: bankCardItem.CardHolderName,
+				ExpirationDate: bankCardItem.ExpirationDate,
+				CVV:            bankCardItem.CVV,
+			}
+			bankCardsTable.SetCellSimple(row, 1, bankCardItem.Number).
+				SetCellSimple(row, 2, bankCardItem.CardHolderName).
+				SetCellSimple(row, 3, bankCardItem.ExpirationDate).
+				SetCellSimple(row, 4, bankCardItem.CVV)
+		})
+	bankCardsFlex := tview.NewFlex().SetDirection(tview.FlexRow).
+		AddItem(bankCardsTable, 0, 4, false).
+		AddItem(bankCardsForm, 12, 1, false).
+		AddItem(bankCardsInputField, 0, 1, false)
 
-	data.AddItem(flex, 0, 4, false)
+	flex.AddItem(loginAndPassesFlex, 0, 1, false).
+		AddItem(textsFlex, 0, 1, false).
+		AddItem(bytesFlex, 0, 1, false).
+		AddItem(bankCardsFlex, 0, 1, false)
 
-	form := tview.NewForm()
-	dataErrorText := tview.NewTextView()
-	dataErrorText.SetSize(1, 1000)
-	form.AddFormItem(dataErrorText)
-	form.AddButton("Sync", func() {
-		dataErrorText.SetLabel("")
-		dataErrorText.SetText("")
+	dataErrorText := tview.NewTextView().SetSize(1, 1000)
+	form := tview.NewForm().
+		AddFormItem(dataErrorText).
+		AddButton("Sync", func() {
+			dataErrorText.SetLabel("").SetText("")
 
-		var userData models.UserData
-		for _, item := range loginAndPasses {
-			userData.LoginAndPasses = append(userData.LoginAndPasses, item)
-		}
-		for _, item := range texts {
-			userData.Texts = append(userData.Texts, item)
-		}
-		for _, item := range bytes {
-			userData.Bytes = append(userData.Bytes, item)
-		}
-		for _, item := range bankCards {
-			userData.BankCards = append(userData.BankCards, item)
-		}
-		for k := range loginAndPasses {
-			delete(loginAndPasses, k)
-		}
-		for k := range texts {
-			delete(texts, k)
-		}
-		for k := range bytes {
-			delete(bytes, k)
-		}
-		for k := range bankCards {
-			delete(bankCards, k)
-		}
-		err := client.Sync(userData, jwt)
-		if err != nil {
-			dataErrorText.SetLabel("Error")
-			dataErrorText.SetText(err.Error())
-			return
-		}
+			var userData models.UserData
+			for _, item := range loginAndPasses {
+				userData.LoginAndPasses = append(userData.LoginAndPasses, item)
+			}
+			for _, item := range texts {
+				userData.Texts = append(userData.Texts, item)
+			}
+			for _, item := range bytes {
+				userData.Bytes = append(userData.Bytes, item)
+			}
+			for _, item := range bankCards {
+				userData.BankCards = append(userData.BankCards, item)
+			}
+			clear(loginAndPasses)
+			clear(texts)
+			clear(bytes)
+			clear(bankCards)
+			err := client.Sync(userData, jwt)
+			if err != nil {
+				dataErrorText.SetLabel("Error").SetText(err.Error())
+				return
+			}
 
-		data, err := client.Get(jwt)
-		if err != nil {
-			dataErrorText.SetLabel("Error")
-			dataErrorText.SetText(err.Error())
-			return
-		}
-		if data != nil {
-			updateTables(*data)
-		}
-	})
-	form.AddButton("Back", func() {
-		pages.SwitchToPage("Menu")
-	})
-	data.AddItem(form, 0, 1, false)
+			data, err := client.Get(jwt)
+			if err != nil {
+				dataErrorText.SetLabel("Error").SetText(err.Error())
+				return
+			}
+			if data != nil {
+				updateTables(*data)
+			}
+		}).
+		AddButton("Back", func() {
+			pages.SwitchToPage("Menu")
+		})
+
+	data.AddItem(flex, 0, 4, false).AddItem(form, 0, 1, false)
 
 	// --- REGISTRATION ---
-	registrationErrorText := tview.NewTextView()
-	registrationErrorText.SetSize(1, 1000)
+	registrationErrorText := tview.NewTextView().SetSize(1, 1000)
 	registration.AddInputField("Username", "", 20, nil, func(text string) {
 		registrationRequest.Username = text
-	})
-	registration.AddInputField("Password", "", 20, nil, func(text string) {
-		registrationRequest.Password = text
-	})
-	registration.AddFormItem(registrationErrorText)
-	registration.AddButton("Registration", func() {
-		registrationErrorText.SetLabel("")
-		registrationErrorText.SetText("")
+	}).
+		AddInputField("Password", "", 20, nil, func(text string) {
+			registrationRequest.Password = text
+		}).
+		AddFormItem(registrationErrorText).
+		AddButton("Registration", func() {
+			registrationErrorText.SetLabel("").SetText("")
 
-		resp, err := client.Registration(registrationRequest)
-		if err != nil {
-			registrationErrorText.SetLabel("Error")
-			registrationErrorText.SetText(err.Error())
-			return
-		}
-		if resp != nil {
-			jwt = *resp
-		}
+			resp, err := client.Registration(registrationRequest)
+			if err != nil {
+				registrationErrorText.SetLabel("Error").SetText(err.Error())
+				return
+			}
+			if resp != nil {
+				jwt = *resp
+			}
 
-		data, err := client.Get(jwt)
-		if err != nil {
-			registrationErrorText.SetLabel("Error")
-			registrationErrorText.SetText(err.Error())
-			return
-		}
-		if data != nil {
-			updateTables(*data)
-		}
+			data, err := client.Get(jwt)
+			if err != nil {
+				registrationErrorText.SetLabel("Error").SetText(err.Error())
+				return
+			}
+			if data != nil {
+				updateTables(*data)
+			}
 
-		pages.SwitchToPage("Data")
-	})
-	registration.AddButton("Back", func() {
-		pages.SwitchToPage("Menu")
-	})
+			pages.SwitchToPage("Data")
+		}).
+		AddButton("Back", func() {
+			pages.SwitchToPage("Menu")
+		})
 
 	// --- AUTH ---
-	authErrorText := tview.NewTextView()
-	authErrorText.SetSize(1, 1000)
+	authErrorText := tview.NewTextView().SetSize(1, 1000)
 	auth.AddInputField("Username", "", 20, nil, func(text string) {
 		authRequest.Username = text
-	})
-	auth.AddInputField("Password", "", 20, nil, func(text string) {
-		authRequest.Password = text
-	})
-	auth.AddFormItem(authErrorText)
-	auth.AddButton("Auth", func() {
-		authErrorText.SetLabel("")
-		authErrorText.SetText("")
+	}).
+		AddInputField("Password", "", 20, nil, func(text string) {
+			authRequest.Password = text
+		}).
+		AddFormItem(authErrorText).
+		AddButton("Auth", func() {
+			authErrorText.SetLabel("").SetText("")
 
-		resp, err := client.Auth(authRequest)
-		if err != nil {
-			authErrorText.SetLabel("Error")
-			authErrorText.SetText(err.Error())
-			return
-		}
-		if resp != nil {
-			jwt = *resp
-		}
+			resp, err := client.Auth(authRequest)
+			if err != nil {
+				authErrorText.SetLabel("Error").SetText(err.Error())
+				return
+			}
+			if resp != nil {
+				jwt = *resp
+			}
 
-		data, err := client.Get(jwt)
-		if err != nil {
-			authErrorText.SetLabel("Error")
-			authErrorText.SetText(err.Error())
-			return
-		}
-		if data != nil {
-			updateTables(*data)
-		}
+			data, err := client.Get(jwt)
+			if err != nil {
+				authErrorText.SetLabel("Error").SetText(err.Error())
+				return
+			}
+			if data != nil {
+				updateTables(*data)
+			}
 
-		pages.SwitchToPage("Data")
-	})
-	auth.AddButton("Back", func() {
-		pages.SwitchToPage("Menu")
-	})
+			pages.SwitchToPage("Data")
+		}).
+		AddButton("Back", func() {
+			pages.SwitchToPage("Menu")
+		})
 
 	err = app.SetRoot(pages, true).EnableMouse(true).Run()
 	if err != nil {
-		return fmt.Errorf("can not create application: %w", err)
+		return fmt.Errorf("can not run application: %w", err)
 	}
 
 	return nil
 }
 
 func updateTables(data models.UserData) {
+	loginAndPassesTable.Clear()
+	loginAndPassesTable.SetCell(0, 0, tview.NewTableCell("ID").SetAlign(tview.AlignCenter).SetTextColor(tcell.ColorYellow)).
+		SetCell(0, 1, tview.NewTableCell("Login").SetAlign(tview.AlignCenter).SetTextColor(tcell.ColorYellow)).
+		SetCell(0, 2, tview.NewTableCell("Pasword").SetAlign(tview.AlignCenter).SetTextColor(tcell.ColorYellow))
 	for _, item := range data.LoginAndPasses {
 		if item.ID == nil {
 			continue
 		}
-		loginAndPassesTable.SetCell(*item.ID, 0, tview.NewTableCell(strconv.Itoa(*item.ID)))
-		loginAndPassesTable.SetCell(*item.ID, 1, tview.NewTableCell(item.Login))
-		loginAndPassesTable.SetCell(*item.ID, 2, tview.NewTableCell(item.Password))
+		loginAndPassesTable.SetCellSimple(*item.ID, 0, strconv.Itoa(*item.ID))
+		loginAndPassesTable.SetCellSimple(*item.ID, 1, item.Login)
+		loginAndPassesTable.SetCellSimple(*item.ID, 2, item.Password)
 	}
+	textsTable.Clear()
+	textsTable.SetCell(0, 0, tview.NewTableCell("ID").SetAlign(tview.AlignCenter).SetTextColor(tcell.ColorYellow)).
+		SetCell(0, 1, tview.NewTableCell("Text").SetAlign(tview.AlignCenter).SetTextColor(tcell.ColorYellow))
 	for _, item := range data.Texts {
 		if item.ID == nil {
 			continue
 		}
-		textsTable.SetCell(*item.ID, 0, tview.NewTableCell(strconv.Itoa(*item.ID)))
-		textsTable.SetCell(*item.ID, 1, tview.NewTableCell(item.Text))
+		textsTable.SetCellSimple(*item.ID, 0, strconv.Itoa(*item.ID))
+		textsTable.SetCellSimple(*item.ID, 1, item.Text)
 	}
+	bytesTable.Clear()
+	bytesTable.SetCell(0, 0, tview.NewTableCell("ID").SetAlign(tview.AlignCenter).SetTextColor(tcell.ColorYellow)).
+		SetCell(0, 1, tview.NewTableCell("Bytes").SetAlign(tview.AlignCenter).SetTextColor(tcell.ColorYellow))
 	for _, item := range data.Bytes {
 		if item.ID == nil {
 			continue
 		}
-		bytesTable.SetCell(*item.ID, 0, tview.NewTableCell(strconv.Itoa(*item.ID)))
-		bytesTable.SetCell(*item.ID, 1, tview.NewTableCell(string(item.Bytes)))
+		bytesTable.SetCellSimple(*item.ID, 0, strconv.Itoa(*item.ID))
+		bytesTable.SetCellSimple(*item.ID, 1, string(item.Bytes))
 	}
+	bankCardsTable.Clear()
+	bankCardsTable.SetCell(0, 0, tview.NewTableCell("ID").SetAlign(tview.AlignCenter).SetTextColor(tcell.ColorYellow)).
+		SetCell(0, 1, tview.NewTableCell("Number").SetAlign(tview.AlignCenter).SetTextColor(tcell.ColorYellow)).
+		SetCell(0, 2, tview.NewTableCell("Card holder name").SetAlign(tview.AlignCenter).SetTextColor(tcell.ColorYellow)).
+		SetCell(0, 3, tview.NewTableCell("Expiration date").SetAlign(tview.AlignCenter).SetTextColor(tcell.ColorYellow)).
+		SetCell(0, 4, tview.NewTableCell("CVV").SetAlign(tview.AlignCenter).SetTextColor(tcell.ColorYellow))
 	for _, item := range data.BankCards {
 		if item.ID == nil {
 			continue
 		}
-		bankCardsTable.SetCell(*item.ID, 0, tview.NewTableCell(strconv.Itoa(*item.ID)))
-		bankCardsTable.SetCell(*item.ID, 1, tview.NewTableCell(item.Number))
-		bankCardsTable.SetCell(*item.ID, 2, tview.NewTableCell(item.CardHolderName))
-		bankCardsTable.SetCell(*item.ID, 3, tview.NewTableCell(item.ExpirationDate))
-		bankCardsTable.SetCell(*item.ID, 4, tview.NewTableCell(item.CVV))
+		bankCardsTable.SetCellSimple(*item.ID, 0, strconv.Itoa(*item.ID))
+		bankCardsTable.SetCellSimple(*item.ID, 1, item.Number)
+		bankCardsTable.SetCellSimple(*item.ID, 2, item.CardHolderName)
+		bankCardsTable.SetCellSimple(*item.ID, 3, item.ExpirationDate)
+		bankCardsTable.SetCellSimple(*item.ID, 4, item.CVV)
 	}
 }

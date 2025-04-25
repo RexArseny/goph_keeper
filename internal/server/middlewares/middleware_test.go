@@ -1,6 +1,8 @@
 package middlewares
 
 import (
+	"crypto"
+	"crypto/rsa"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -13,7 +15,46 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/zap"
 )
+
+func TestNewMiddleware(t *testing.T) {
+	tests := []struct {
+		name       string
+		publicKey  crypto.PublicKey
+		privateKey crypto.PrivateKey
+		logger     *zap.Logger
+	}{
+		{
+			name:       "with all parameters",
+			publicKey:  &rsa.PublicKey{},
+			privateKey: &rsa.PrivateKey{},
+			logger:     zap.NewNop(),
+		},
+		{
+			name:       "with nil keys",
+			publicKey:  nil,
+			privateKey: nil,
+			logger:     zap.NewNop(),
+		},
+		{
+			name:       "with nil logger",
+			publicKey:  &rsa.PublicKey{},
+			privateKey: &rsa.PrivateKey{},
+			logger:     nil,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			middleware := NewMiddleware(tt.publicKey, tt.privateKey, tt.logger)
+
+			assert.Equal(t, middleware.publicKey, tt.publicKey)
+			assert.Equal(t, middleware.privateKey, tt.privateKey)
+			assert.Equal(t, middleware.logger, tt.logger)
+		})
+	}
+}
 
 func TestGetJWT(t *testing.T) {
 	testLogger, err := logger.InitLogger()
