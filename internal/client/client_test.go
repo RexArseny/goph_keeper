@@ -41,11 +41,11 @@ func TestNewClient(t *testing.T) {
 			Cmd: strslice.StrSlice{"postgres"},
 		},
 		&container.HostConfig{
-			PortBindings: nat.PortMap{nat.Port("5432/tcp"): []nat.PortBinding{{HostIP: "", HostPort: "5433"}}},
+			PortBindings: nat.PortMap{nat.Port("5432/tcp"): []nat.PortBinding{{HostIP: "0.0.0.0", HostPort: "0"}}},
 		},
 		nil,
 		nil,
-		"postgres")
+		"")
 	assert.NoError(t, err)
 
 	err = cli.ContainerStart(context.Background(), resp.ID, container.StartOptions{})
@@ -60,12 +60,15 @@ func TestNewClient(t *testing.T) {
 
 	time.Sleep(time.Second * 5)
 
+	inspect, err := cli.ContainerInspect(context.Background(), resp.ID)
+	assert.NoError(t, err)
+
 	t.Setenv("PUBLIC_KEY_PATH", "../../public.pem")
 	t.Setenv("PRIVATE_KEY_PATH", "../../private.pem")
 	t.Setenv("CERTIFICATE_PATH", "../../cert.pem")
 	t.Setenv("CERTIFICATE_KEY_PATH", "../../key.pem")
 	t.Setenv("CERTIFICATE_KEY_PATH", "../../key.pem")
-	t.Setenv("DATABASE_DSN", "postgres://postgres:postgres@localhost:5433/gophkeeper?sslmode=disable")
+	t.Setenv("DATABASE_DSN", "postgres://postgres:postgres@localhost:"+inspect.NetworkSettings.Ports["5432/tcp"][0].HostPort+"/gophkeeper?sslmode=disable")
 
 	err = os.MkdirAll("internal/server/repository/migrations", 0755)
 	assert.NoError(t, err)
@@ -177,6 +180,11 @@ COMMIT;`))
 }
 
 func TestUpdateTables(t *testing.T) {
+	loginAndPassesTable := tview.NewTable().SetBorders(true).SetSelectable(true, true)
+	textsTable := tview.NewTable().SetBorders(true).SetSelectable(true, true)
+	bytesTable := tview.NewTable().SetBorders(true).SetSelectable(true, true)
+	bankCardsTable := tview.NewTable().SetBorders(true).SetSelectable(true, true)
+
 	resetTables := func() {
 		loginAndPassesTable.Clear()
 		textsTable.Clear()
@@ -262,7 +270,12 @@ func TestUpdateTables(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			resetTables()
-			updateTables(tt.data)
+			updateTables(
+				loginAndPassesTable,
+				textsTable,
+				bytesTable,
+				bankCardsTable,
+				tt.data)
 
 			for row, expectedLogin := range tt.expected["loginAndPasses"] {
 				cell := loginAndPassesTable.GetCell(row, 1)

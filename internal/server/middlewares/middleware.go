@@ -47,19 +47,11 @@ func (m *Middleware) GetJWT() gin.HandlerFunc {
 			},
 		)
 		if err != nil {
-			ctx.JSON(http.StatusUnauthorized, gin.H{"error": http.StatusText(http.StatusUnauthorized)})
-			ctx.Abort()
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": http.StatusText(http.StatusUnauthorized)})
 			return
 		}
 
-		claims, ok := token.Claims.(*models.JWT)
-		if !ok {
-			ctx.JSON(http.StatusUnauthorized, gin.H{"error": http.StatusText(http.StatusUnauthorized)})
-			ctx.Abort()
-			return
-		}
-
-		ctx.Set(Authorization, claims)
+		ctx.Set(Authorization, token.Claims)
 
 		ctx.Next()
 	}

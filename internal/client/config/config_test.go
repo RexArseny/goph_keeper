@@ -11,11 +11,9 @@ import (
 func TestInit(t *testing.T) {
 	oldEnv := os.Environ()
 	defer func() {
-		os.Clearenv()
 		for _, envVar := range oldEnv {
 			keyVal := strings.SplitN(envVar, "=", 2)
-			err := os.Setenv(keyVal[0], keyVal[1])
-			assert.NoError(t, err)
+			t.Setenv(keyVal[0], keyVal[1])
 		}
 	}()
 
@@ -44,17 +42,15 @@ func TestInit(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			os.Clearenv()
 			for key, value := range tt.envVars {
-				err := os.Setenv(key, value)
-				assert.NoError(t, err)
+				t.Setenv(key, value)
 			}
 
 			cfg, err := Init()
 
 			assert.NoError(t, err)
 			assert.NotNil(t, cfg)
-			assert.Equal(t, *cfg, *tt.expectedConfig)
+			assert.Equal(t, *tt.expectedConfig, *cfg)
 		})
 	}
 }

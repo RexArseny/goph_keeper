@@ -309,7 +309,7 @@ func (d *DB) SyncLoginAndPass(ctx context.Context) error {
 	var login string
 	var password string
 	err = tx.QueryRow(ctx, `SELECT id, data_id, username, login, password
-							FROM login_and_passes_for_update`).
+							FROM login_and_passes_for_update LIMIT 1`).
 		Scan(&id, &dataID, &username, &login, &password)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -363,7 +363,7 @@ func (d *DB) SyncText(ctx context.Context) error {
 	var username string
 	var text string
 	err = tx.QueryRow(ctx, `SELECT id, data_id, username, text
-							FROM texts_for_update`).
+							FROM texts_for_update LIMIT 1`).
 		Scan(&id, &dataID, &username, &text)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -416,7 +416,7 @@ func (d *DB) SyncBytes(ctx context.Context) error {
 	var username string
 	var bytes string
 	err = tx.QueryRow(ctx, `SELECT id, data_id, username, bytes
-							FROM bytes_for_update`).
+							FROM bytes_for_update LIMIT 1`).
 		Scan(&id, &dataID, &username, &bytes)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -472,7 +472,7 @@ func (d *DB) SyncBankCard(ctx context.Context) error {
 	var expirationDate string
 	var cvv string
 	err = tx.QueryRow(ctx, `SELECT id, data_id, username, number, card_holder_name, expiration_date, cvv
-							FROM bank_cards_for_update`).
+							FROM bank_cards_for_update LIMIT 1`).
 		Scan(&id, &dataID, &username, &number, &cardHolderName, &expirationDate, &cvv)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {

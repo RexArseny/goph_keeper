@@ -15,11 +15,6 @@ import (
 var (
 	version     = "v1.0.0"
 	dateOfBuild = time.Now().Format(time.RFC3339)
-
-	loginAndPassesTable = tview.NewTable().SetBorders(true).SetSelectable(true, true)
-	textsTable          = tview.NewTable().SetBorders(true).SetSelectable(true, true)
-	bytesTable          = tview.NewTable().SetBorders(true).SetSelectable(true, true)
-	bankCardsTable      = tview.NewTable().SetBorders(true).SetSelectable(true, true)
 )
 
 func NewClient() error {
@@ -70,6 +65,7 @@ func NewClient() error {
 	// --- DATA ---
 	flex := tview.NewFlex()
 
+	loginAndPassesTable := tview.NewTable().SetBorders(true).SetSelectable(true, true)
 	loginAndPassesTable.SetBorderPadding(1, 1, 1, 1)
 
 	var loginAndPassesEditing bool
@@ -84,16 +80,13 @@ func NewClient() error {
 				loginAndPassesTable.GetCell(loginAndPassesCurrentRow, loginAndPassesCurrentCol).SetText(loginAndPassesInputField.GetText())
 				loginAndPassesInputField.SetFieldBackgroundColor(tcell.ColorBlack)
 
-				var idVal *int
-				id := loginAndPassesTable.GetCell(loginAndPassesCurrentRow, 0).Text
-				if id != "" {
-					idString, err := strconv.Atoi(id)
-					if err == nil {
-						idVal = &idString
-					}
+				var id *int
+				idString, err := strconv.Atoi(loginAndPassesTable.GetCell(loginAndPassesCurrentRow, 0).Text)
+				if err == nil {
+					id = &idString
 				}
 				loginAndPasses[loginAndPassesCurrentRow] = models.LoginAndPass{
-					ID:       idVal,
+					ID:       id,
 					Login:    loginAndPassesTable.GetCell(loginAndPassesCurrentRow, 1).Text,
 					Password: loginAndPassesTable.GetCell(loginAndPassesCurrentRow, 2).Text,
 				}
@@ -135,6 +128,7 @@ func NewClient() error {
 		AddItem(loginAndPassesForm, 12, 1, false).
 		AddItem(loginAndPassesInputField, 0, 1, false)
 
+	textsTable := tview.NewTable().SetBorders(true).SetSelectable(true, true)
 	textsTable.SetBorderPadding(1, 1, 1, 1)
 
 	var textsEditing bool
@@ -149,16 +143,13 @@ func NewClient() error {
 				textsTable.GetCell(textsCurrentRow, textsCurrentCol).SetText(textsInputField.GetText())
 				textsInputField.SetFieldBackgroundColor(tcell.ColorBlack)
 
-				var idVal *int
-				id := textsTable.GetCell(textsCurrentRow, 0).Text
-				if id != "" {
-					idString, err := strconv.Atoi(id)
-					if err == nil {
-						idVal = &idString
-					}
+				var id *int
+				idString, err := strconv.Atoi(textsTable.GetCell(textsCurrentRow, 0).Text)
+				if err == nil {
+					id = &idString
 				}
 				texts[textsCurrentRow] = models.Text{
-					ID:   idVal,
+					ID:   id,
 					Text: textsTable.GetCell(textsCurrentRow, 1).Text,
 				}
 			}
@@ -194,6 +185,7 @@ func NewClient() error {
 		AddItem(textsForm, 12, 1, false).
 		AddItem(textsInputField, 0, 1, false)
 
+	bytesTable := tview.NewTable().SetBorders(true).SetSelectable(true, true)
 	bytesTable.SetBorderPadding(1, 1, 1, 1)
 
 	var bytesEditing bool
@@ -208,16 +200,13 @@ func NewClient() error {
 				bytesTable.GetCell(bytesCurrentRow, bytesCurrentCol).SetText(bytesInputField.GetText())
 				bytesInputField.SetFieldBackgroundColor(tcell.ColorBlack)
 
-				var idVal *int
-				id := bytesTable.GetCell(bytesCurrentRow, 0).Text
-				if id != "" {
-					idString, err := strconv.Atoi(id)
-					if err == nil {
-						idVal = &idString
-					}
+				var id *int
+				idString, err := strconv.Atoi(bytesTable.GetCell(bytesCurrentRow, 0).Text)
+				if err == nil {
+					id = &idString
 				}
 				bytes[bytesCurrentRow] = models.Bytes{
-					ID:    idVal,
+					ID:    id,
 					Bytes: bytesTable.GetCell(bytesCurrentRow, 1).Text,
 				}
 			}
@@ -253,6 +242,7 @@ func NewClient() error {
 		AddItem(bytesForm, 12, 1, false).
 		AddItem(bytesInputField, 0, 1, false)
 
+	bankCardsTable := tview.NewTable().SetBorders(true).SetSelectable(true, true)
 	bankCardsTable.SetBorderPadding(1, 1, 1, 1)
 
 	var bankCardsEditing bool
@@ -267,16 +257,13 @@ func NewClient() error {
 				bankCardsTable.GetCell(bankCardsCurrentRow, bankCardsCurrentCol).SetText(bankCardsInputField.GetText())
 				bankCardsInputField.SetFieldBackgroundColor(tcell.ColorBlack)
 
-				var idVal *int
-				id := bytesTable.GetCell(bankCardsCurrentRow, 0).Text
-				if id != "" {
-					idString, err := strconv.Atoi(id)
-					if err == nil {
-						idVal = &idString
-					}
+				var id *int
+				idString, err := strconv.Atoi(bytesTable.GetCell(bankCardsCurrentRow, 0).Text)
+				if err == nil {
+					id = &idString
 				}
 				bankCards[bankCardsCurrentRow] = models.BankCard{
-					ID:             idVal,
+					ID:             id,
 					Number:         bankCardsTable.GetCell(bankCardsCurrentRow, 1).Text,
 					CardHolderName: bankCardsTable.GetCell(bankCardsCurrentRow, 2).Text,
 					ExpirationDate: bankCardsTable.GetCell(bankCardsCurrentRow, 3).Text,
@@ -370,7 +357,12 @@ func NewClient() error {
 				return
 			}
 			if data != nil {
-				updateTables(*data)
+				updateTables(
+					loginAndPassesTable,
+					textsTable,
+					bytesTable,
+					bankCardsTable,
+					*data)
 			}
 		}).
 		AddButton("Back", func() {
@@ -406,7 +398,12 @@ func NewClient() error {
 				return
 			}
 			if data != nil {
-				updateTables(*data)
+				updateTables(
+					loginAndPassesTable,
+					textsTable,
+					bytesTable,
+					bankCardsTable,
+					*data)
 			}
 
 			pages.SwitchToPage("Data")
@@ -442,7 +439,12 @@ func NewClient() error {
 				return
 			}
 			if data != nil {
-				updateTables(*data)
+				updateTables(
+					loginAndPassesTable,
+					textsTable,
+					bytesTable,
+					bankCardsTable,
+					*data)
 			}
 
 			pages.SwitchToPage("Data")
@@ -459,7 +461,13 @@ func NewClient() error {
 	return nil
 }
 
-func updateTables(data models.UserData) {
+func updateTables(
+	loginAndPassesTable *tview.Table,
+	textsTable *tview.Table,
+	bytesTable *tview.Table,
+	bankCardsTable *tview.Table,
+	data models.UserData,
+) {
 	loginAndPassesTable.Clear()
 	loginAndPassesTable.SetCell(0, 0, tview.NewTableCell("ID").SetAlign(tview.AlignCenter).SetTextColor(tcell.ColorYellow)).
 		SetCell(0, 1, tview.NewTableCell("Login").SetAlign(tview.AlignCenter).SetTextColor(tcell.ColorYellow)).
@@ -472,6 +480,7 @@ func updateTables(data models.UserData) {
 		loginAndPassesTable.SetCellSimple(*item.ID, 1, item.Login)
 		loginAndPassesTable.SetCellSimple(*item.ID, 2, item.Password)
 	}
+
 	textsTable.Clear()
 	textsTable.SetCell(0, 0, tview.NewTableCell("ID").SetAlign(tview.AlignCenter).SetTextColor(tcell.ColorYellow)).
 		SetCell(0, 1, tview.NewTableCell("Text").SetAlign(tview.AlignCenter).SetTextColor(tcell.ColorYellow))
@@ -482,6 +491,7 @@ func updateTables(data models.UserData) {
 		textsTable.SetCellSimple(*item.ID, 0, strconv.Itoa(*item.ID))
 		textsTable.SetCellSimple(*item.ID, 1, item.Text)
 	}
+
 	bytesTable.Clear()
 	bytesTable.SetCell(0, 0, tview.NewTableCell("ID").SetAlign(tview.AlignCenter).SetTextColor(tcell.ColorYellow)).
 		SetCell(0, 1, tview.NewTableCell("Bytes").SetAlign(tview.AlignCenter).SetTextColor(tcell.ColorYellow))
@@ -492,6 +502,7 @@ func updateTables(data models.UserData) {
 		bytesTable.SetCellSimple(*item.ID, 0, strconv.Itoa(*item.ID))
 		bytesTable.SetCellSimple(*item.ID, 1, string(item.Bytes))
 	}
+
 	bankCardsTable.Clear()
 	bankCardsTable.SetCell(0, 0, tview.NewTableCell("ID").SetAlign(tview.AlignCenter).SetTextColor(tcell.ColorYellow)).
 		SetCell(0, 1, tview.NewTableCell("Number").SetAlign(tview.AlignCenter).SetTextColor(tcell.ColorYellow)).

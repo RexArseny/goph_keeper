@@ -32,7 +32,7 @@ func NewController(logger *zap.Logger, interactor usecases.Interactor) Controlle
 func (c *Controller) Registration(ctx *gin.Context) {
 	data, err := io.ReadAll(ctx.Request.Body)
 	if err != nil {
-		ctx.String(http.StatusBadRequest, http.StatusText(http.StatusBadRequest))
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": http.StatusText(http.StatusBadRequest)})
 		return
 	}
 
@@ -61,7 +61,7 @@ func (c *Controller) Registration(ctx *gin.Context) {
 func (c *Controller) Auth(ctx *gin.Context) {
 	data, err := io.ReadAll(ctx.Request.Body)
 	if err != nil {
-		ctx.String(http.StatusBadRequest, http.StatusText(http.StatusBadRequest))
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": http.StatusText(http.StatusBadRequest)})
 		return
 	}
 

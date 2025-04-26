@@ -86,6 +86,10 @@ func TestGetJWT(t *testing.T) {
 	tokenString, err := token.SignedString(privateKey)
 	assert.NoError(t, err)
 
+	signatureMismatchToken := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	signatureMismatchTokenString, err := signatureMismatchToken.SignedString([]byte("invalid-key"))
+	assert.NoError(t, err)
+
 	tests := []struct {
 		name          string
 		token         string
@@ -94,6 +98,11 @@ func TestGetJWT(t *testing.T) {
 		{
 			name:          "invalid jwt",
 			token:         "abc",
+			expectedError: true,
+		},
+		{
+			name:          "jwt signature mismatch",
+			token:         signatureMismatchTokenString,
 			expectedError: true,
 		},
 		{
