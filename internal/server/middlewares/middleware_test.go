@@ -90,6 +90,21 @@ func TestGetJWT(t *testing.T) {
 	signatureMismatchTokenString, err := signatureMismatchToken.SignedString([]byte("invalid-key"))
 	assert.NoError(t, err)
 
+	invalidClaims := &models.JWT{
+		RegisteredClaims: jwt.RegisteredClaims{
+			Issuer:    "goph_keeper",
+			Subject:   "username",
+			Audience:  jwt.ClaimStrings{},
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Second * 900)),
+			NotBefore: jwt.NewNumericDate(time.Now()),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+			ID:        uuid.New().String(),
+		},
+	}
+	invalidToken := jwt.NewWithClaims(jwt.SigningMethodEdDSA, invalidClaims)
+	invalidTokenString, err := invalidToken.SignedString(privateKey)
+	assert.NoError(t, err)
+
 	tests := []struct {
 		name          string
 		token         string
@@ -103,6 +118,11 @@ func TestGetJWT(t *testing.T) {
 		{
 			name:          "jwt signature mismatch",
 			token:         signatureMismatchTokenString,
+			expectedError: true,
+		},
+		{
+			name:          "invalid claims",
+			token:         invalidTokenString,
 			expectedError: true,
 		},
 		{
@@ -129,15 +149,13 @@ func TestGetJWT(t *testing.T) {
 			if tt.expectedError {
 				assert.Equal(t, http.StatusUnauthorized, ctx.Writer.Status())
 
-				claims, exists := ctx.Get(Authorization)
-				assert.False(t, exists)
-				assert.Empty(t, claims)
+				username := ctx.GetString(Username)
+				assert.Empty(t, username)
 			} else {
 				assert.Equal(t, http.StatusOK, ctx.Writer.Status())
 
-				claims, exists := ctx.Get(Authorization)
-				assert.True(t, exists)
-				assert.IsType(t, &models.JWT{}, claims)
+				username := ctx.GetString(Username)
+				assert.NotEmpty(t, username)
 			}
 		})
 	}

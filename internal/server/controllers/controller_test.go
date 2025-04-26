@@ -6,6 +6,7 @@ import (
 	"crypto/rand"
 	"crypto/sha512"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -17,6 +18,7 @@ import (
 	"github.com/RexArseny/goph_keeper/internal/server/logger"
 	"github.com/RexArseny/goph_keeper/internal/server/middlewares"
 	"github.com/RexArseny/goph_keeper/internal/server/models"
+	"github.com/RexArseny/goph_keeper/internal/server/repository"
 	"github.com/RexArseny/goph_keeper/internal/server/usecases"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
@@ -31,10 +33,28 @@ func NewDBMock() DBMock {
 }
 
 func (d *DBMock) AddUser(ctx context.Context, username string, dk []byte, salt []byte) error {
+	if username == "exist" {
+		return repository.ErrUserAlreadyExist
+	}
+	errorDK, err := pbkdf2.Key(sha512.New, "error", salt, 4096, 32)
+	if err != nil {
+		return fmt.Errorf("can not create key from password: %w", err)
+	}
+	if username == "error" && string(dk) != string(errorDK) {
+		return errors.New("error")
+	}
+
 	return nil
 }
 
 func (d *DBMock) GetUser(ctx context.Context, username string) ([]byte, []byte, error) {
+	if username == "invalid" {
+		return nil, nil, repository.ErrInvalidUserOrPassword
+	}
+	if username == "error" {
+		return nil, nil, errors.New("error")
+	}
+
 	salt := make([]byte, 16)
 	_, err := rand.Read(salt[:])
 	if err != nil {
@@ -50,10 +70,18 @@ func (d *DBMock) GetUser(ctx context.Context, username string) ([]byte, []byte, 
 }
 
 func (d *DBMock) AddForSync(ctx context.Context, data models.UserData, username string) error {
+	if username == "error" {
+		return errors.New("error")
+	}
+
 	return nil
 }
 
 func (d *DBMock) GetUserData(ctx context.Context, username string) (*models.UserData, error) {
+	if username == "error" {
+		return nil, errors.New("error")
+	}
+
 	return &models.UserData{}, nil
 }
 
@@ -91,6 +119,16 @@ func TestRegistration(t *testing.T) {
 			name:        "invalid request",
 			request:     `abc`,
 			stastusCode: http.StatusBadRequest,
+		},
+		{
+			name:        "user already exist",
+			request:     `{"username":"exist","password":"password"}`,
+			stastusCode: http.StatusConflict,
+		},
+		{
+			name:        "can not registr new user",
+			request:     `{"username":"error","password":"password"}`,
+			stastusCode: http.StatusInternalServerError,
 		},
 		{
 			name:        "valid request",
@@ -157,6 +195,16 @@ func TestAuth(t *testing.T) {
 			name:        "invalid request",
 			request:     `abc`,
 			stastusCode: http.StatusBadRequest,
+		},
+		{
+			name:        "invalid user or password",
+			request:     `{"username":"invalid","password":"password"}`,
+			stastusCode: http.StatusUnauthorized,
+		},
+		{
+			name:        "can not auth user",
+			request:     `{"username":"error","password":"password"}`,
+			stastusCode: http.StatusInternalServerError,
 		},
 		{
 			name:        "valid request",
@@ -232,6 +280,12 @@ func TestSync(t *testing.T) {
 			authRequest: ``,
 			syncRequest: `{"texts":[{"text":"text"}]}`,
 			stastusCode: http.StatusUnauthorized,
+		},
+		{
+			name:        "can not sync",
+			authRequest: `{"username":"error","password":"error"}`,
+			syncRequest: `{"texts":[{"text":"text"}]}`,
+			stastusCode: http.StatusInternalServerError,
 		},
 		{
 			name:        "valid request",
@@ -319,6 +373,11 @@ func TestGet(t *testing.T) {
 			name:        "invlaid auth request",
 			authRequest: ``,
 			stastusCode: http.StatusUnauthorized,
+		},
+		{
+			name:        "can not get",
+			authRequest: `{"username":"error","password":"error"}`,
+			stastusCode: http.StatusInternalServerError,
 		},
 		{
 			name:        "valid request",

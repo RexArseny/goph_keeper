@@ -1,9 +1,7 @@
 package controllers
 
 import (
-	"encoding/json"
 	"errors"
-	"io"
 	"net/http"
 
 	"github.com/RexArseny/goph_keeper/internal/server/middlewares"
@@ -30,14 +28,8 @@ func NewController(logger *zap.Logger, interactor usecases.Interactor) Controlle
 
 // Registration create new user and return JWT.
 func (c *Controller) Registration(ctx *gin.Context) {
-	data, err := io.ReadAll(ctx.Request.Body)
-	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": http.StatusText(http.StatusBadRequest)})
-		return
-	}
-
 	var request models.AuthRequest
-	err = json.Unmarshal(data, &request)
+	err := ctx.BindJSON(&request)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": http.StatusText(http.StatusBadRequest)})
 		return
@@ -59,14 +51,8 @@ func (c *Controller) Registration(ctx *gin.Context) {
 
 // Auth get user and return JWT.
 func (c *Controller) Auth(ctx *gin.Context) {
-	data, err := io.ReadAll(ctx.Request.Body)
-	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": http.StatusText(http.StatusBadRequest)})
-		return
-	}
-
 	var request models.AuthRequest
-	err = json.Unmarshal(data, &request)
+	err := ctx.BindJSON(&request)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": http.StatusText(http.StatusBadRequest)})
 		return
@@ -88,31 +74,14 @@ func (c *Controller) Auth(ctx *gin.Context) {
 
 // Sync create or update data in database.
 func (c *Controller) Sync(ctx *gin.Context) {
-	tokenValue, ok := ctx.Get(middlewares.Authorization)
-	if !ok {
-		ctx.JSON(http.StatusUnauthorized, gin.H{"error": http.StatusText(http.StatusUnauthorized)})
-		return
-	}
-	token, ok := tokenValue.(*models.JWT)
-	if !ok {
-		ctx.JSON(http.StatusUnauthorized, gin.H{"error": http.StatusText(http.StatusUnauthorized)})
-		return
-	}
-
-	data, err := io.ReadAll(ctx.Request.Body)
-	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": http.StatusText(http.StatusBadRequest)})
-		return
-	}
-
 	var request models.UserData
-	err = json.Unmarshal(data, &request)
+	err := ctx.BindJSON(&request)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": http.StatusText(http.StatusBadRequest)})
 		return
 	}
 
-	err = c.interactor.Sync(ctx, request, token.Username)
+	err = c.interactor.Sync(ctx, request, ctx.GetString(middlewares.Username))
 	if err != nil {
 		c.logger.Error("Can not sync data", zap.Error(err))
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": http.StatusText(http.StatusInternalServerError)})
@@ -124,18 +93,7 @@ func (c *Controller) Sync(ctx *gin.Context) {
 
 // Get return data from database.
 func (c *Controller) Get(ctx *gin.Context) {
-	tokenValue, ok := ctx.Get(middlewares.Authorization)
-	if !ok {
-		ctx.JSON(http.StatusUnauthorized, gin.H{"error": http.StatusText(http.StatusUnauthorized)})
-		return
-	}
-	token, ok := tokenValue.(*models.JWT)
-	if !ok {
-		ctx.JSON(http.StatusUnauthorized, gin.H{"error": http.StatusText(http.StatusUnauthorized)})
-		return
-	}
-
-	result, err := c.interactor.Get(ctx, token.Username)
+	result, err := c.interactor.Get(ctx, ctx.GetString(middlewares.Username))
 	if err != nil {
 		c.logger.Error("Can not get data", zap.Error(err))
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": http.StatusText(http.StatusInternalServerError)})

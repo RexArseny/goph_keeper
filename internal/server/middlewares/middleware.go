@@ -12,8 +12,11 @@ import (
 	"go.uber.org/zap"
 )
 
-// Authorization is header name of JWT flag constants.
-const Authorization = "Authorization"
+// Default values for m iddleware.
+const (
+	Authorization = "Authorization"
+	Username      = "username"
+)
 
 // Middleware processes requests before and after execution by the handler.
 type Middleware struct {
@@ -51,7 +54,13 @@ func (m *Middleware) GetJWT() gin.HandlerFunc {
 			return
 		}
 
-		ctx.Set(Authorization, token.Claims)
+		jwtModel, ok := token.Claims.(*models.JWT)
+		if !ok || jwtModel.Username == "" {
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": http.StatusText(http.StatusUnauthorized)})
+			return
+		}
+
+		ctx.Set(Username, jwtModel.Username)
 
 		ctx.Next()
 	}

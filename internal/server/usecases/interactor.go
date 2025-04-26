@@ -6,7 +6,6 @@ import (
 	"crypto/pbkdf2"
 	"crypto/rand"
 	"crypto/sha512"
-	"errors"
 	"fmt"
 	"time"
 
@@ -17,7 +16,7 @@ import (
 	"go.uber.org/zap"
 )
 
-// maxAge is age of JWT.
+// Default values for interactor.
 const (
 	syncTimer = 100
 	saltSize  = 16
@@ -99,12 +98,8 @@ func (i *Interactor) Registration(ctx context.Context, username string, password
 		return nil, fmt.Errorf("can not create jwt: %w", err)
 	}
 
-	if tokenString == nil {
-		return nil, errors.New("token is nil")
-	}
-
 	return &models.AuthResponse{
-		JWT: *tokenString,
+		JWT: tokenString,
 	}, nil
 }
 
@@ -129,12 +124,8 @@ func (i *Interactor) Auth(ctx context.Context, username string, password string)
 		return nil, fmt.Errorf("can not create jwt: %w", err)
 	}
 
-	if tokenString == nil {
-		return nil, errors.New("token is nil")
-	}
-
 	return &models.AuthResponse{
-		JWT: *tokenString,
+		JWT: tokenString,
 	}, nil
 }
 
@@ -158,7 +149,7 @@ func (i *Interactor) Get(ctx context.Context, username string) (*models.UserData
 	return data, nil
 }
 
-func (i *Interactor) createJWT(username string) (*string, error) {
+func (i *Interactor) createJWT(username string) (string, error) {
 	claims := &models.JWT{
 		RegisteredClaims: jwt.RegisteredClaims{
 			Issuer:    "goph_keeper",
@@ -176,8 +167,8 @@ func (i *Interactor) createJWT(username string) (*string, error) {
 
 	tokenString, err := token.SignedString(i.privateKey)
 	if err != nil {
-		return nil, fmt.Errorf("can not sign token: %w", err)
+		return "", fmt.Errorf("can not sign token: %w", err)
 	}
 
-	return &tokenString, nil
+	return tokenString, nil
 }
