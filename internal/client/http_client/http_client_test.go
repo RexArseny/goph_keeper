@@ -73,13 +73,15 @@ func TestNewHTTPClient(t *testing.T) {
 func TestHTTPClientRegistration(t *testing.T) {
 	tests := []struct {
 		name          string
+		address       string
 		request       models.AuthRequest
 		serverHandler http.HandlerFunc
 		expectedJWT   string
 		expectedError string
 	}{
 		{
-			name: "successful registration",
+			name:    "successful registration",
+			address: "",
 			request: models.AuthRequest{
 				Username: "username",
 				Password: "password",
@@ -101,7 +103,8 @@ func TestHTTPClientRegistration(t *testing.T) {
 			expectedJWT: "test-jwt",
 		},
 		{
-			name: "user already exists",
+			name:    "user already exists",
+			address: "",
 			request: models.AuthRequest{
 				Username: "username",
 				Password: "password",
@@ -112,7 +115,8 @@ func TestHTTPClientRegistration(t *testing.T) {
 			expectedError: "this user already exist",
 		},
 		{
-			name: "invalid response body",
+			name:    "invalid response body",
+			address: "",
 			request: models.AuthRequest{
 				Username: "username",
 				Password: "password",
@@ -123,6 +127,17 @@ func TestHTTPClientRegistration(t *testing.T) {
 			},
 			expectedError: "can not unmarshal body",
 		},
+		{
+			name:    "invalid address",
+			address: "\n",
+			request: models.AuthRequest{
+				Username: "username",
+				Password: "password",
+			},
+			serverHandler: func(w http.ResponseWriter, r *http.Request) {
+			},
+			expectedError: "can not send request for registration",
+		},
 	}
 
 	for _, tt := range tests {
@@ -130,7 +145,12 @@ func TestHTTPClientRegistration(t *testing.T) {
 			server := httptest.NewServer(tt.serverHandler)
 			defer server.Close()
 
-			client := NewHTTPClient(server.URL)
+			address := server.URL
+			if tt.address != "" {
+				address = tt.address
+			}
+
+			client := NewHTTPClient(address)
 			jwt, err := client.Registration(tt.request)
 
 			if tt.expectedError != "" {
@@ -149,13 +169,15 @@ func TestHTTPClientRegistration(t *testing.T) {
 func TestHTTPClientAuth(t *testing.T) {
 	tests := []struct {
 		name          string
+		address       string
 		request       models.AuthRequest
 		serverHandler http.HandlerFunc
 		expectedJWT   string
 		expectedError string
 	}{
 		{
-			name: "successful authentication",
+			name:    "successful authentication",
+			address: "",
 			request: models.AuthRequest{
 				Username: "username",
 				Password: "password",
@@ -177,7 +199,8 @@ func TestHTTPClientAuth(t *testing.T) {
 			expectedJWT: "auth-jwt",
 		},
 		{
-			name: "invalid credentials",
+			name:    "invalid credentials",
+			address: "",
 			request: models.AuthRequest{
 				Username: "username",
 				Password: "password",
@@ -188,7 +211,8 @@ func TestHTTPClientAuth(t *testing.T) {
 			expectedError: "invalid username or password",
 		},
 		{
-			name: "server error",
+			name:    "server error",
+			address: "",
 			request: models.AuthRequest{
 				Username: "username",
 				Password: "password",
@@ -198,6 +222,17 @@ func TestHTTPClientAuth(t *testing.T) {
 			},
 			expectedError: "can not unmarshal body",
 		},
+		{
+			name:    "invalid address",
+			address: "\n",
+			request: models.AuthRequest{
+				Username: "username",
+				Password: "password",
+			},
+			serverHandler: func(w http.ResponseWriter, r *http.Request) {
+			},
+			expectedError: "can not send request for auth",
+		},
 	}
 
 	for _, tt := range tests {
@@ -205,7 +240,12 @@ func TestHTTPClientAuth(t *testing.T) {
 			server := httptest.NewServer(tt.serverHandler)
 			defer server.Close()
 
-			client := NewHTTPClient(server.URL)
+			address := server.URL
+			if tt.address != "" {
+				address = tt.address
+			}
+
+			client := NewHTTPClient(address)
 			jwt, err := client.Auth(tt.request)
 
 			if tt.expectedError != "" {
@@ -224,13 +264,15 @@ func TestHTTPClientAuth(t *testing.T) {
 func TestHTTPClientSync(t *testing.T) {
 	tests := []struct {
 		name          string
+		address       string
 		request       models.UserData
 		jwt           string
 		serverHandler http.HandlerFunc
 		expectedError string
 	}{
 		{
-			name: "successful sync",
+			name:    "successful sync",
+			address: "",
 			request: models.UserData{
 				Texts: []models.Text{{Text: "text"}},
 			},
@@ -251,6 +293,7 @@ func TestHTTPClientSync(t *testing.T) {
 		},
 		{
 			name:    "unauthorized",
+			address: "",
 			request: models.UserData{},
 			jwt:     "invalid-jwt",
 			serverHandler: func(w http.ResponseWriter, r *http.Request) {
@@ -260,12 +303,32 @@ func TestHTTPClientSync(t *testing.T) {
 		},
 		{
 			name:    "server error",
+			address: "",
 			request: models.UserData{},
 			jwt:     "valid-jwt",
 			serverHandler: func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusInternalServerError)
 			},
 			expectedError: "unexpected status code: 500",
+		},
+		{
+			name:    "invalid address",
+			address: "\n",
+			request: models.UserData{},
+			jwt:     "valid-jwt",
+			serverHandler: func(w http.ResponseWriter, r *http.Request) {
+			},
+			expectedError: "can not create request",
+		},
+		{
+			name:    "invalid request",
+			address: "",
+			request: models.UserData{},
+			jwt:     "valid-jwt",
+			serverHandler: func(w http.ResponseWriter, r *http.Request) {
+				time.Sleep(time.Second * 2)
+			},
+			expectedError: "can not send request for sync",
 		},
 	}
 
@@ -274,7 +337,17 @@ func TestHTTPClientSync(t *testing.T) {
 			server := httptest.NewServer(tt.serverHandler)
 			defer server.Close()
 
-			client := NewHTTPClient(server.URL)
+			address := server.URL
+			if tt.address != "" {
+				address = tt.address
+			}
+
+			client := HTTPClient{
+				address: address,
+				client: &http.Client{
+					Timeout: time.Second,
+				},
+			}
 			err := client.Sync(tt.request, tt.jwt)
 
 			if tt.expectedError != "" {
@@ -290,14 +363,16 @@ func TestHTTPClientSync(t *testing.T) {
 func TestHTTPClientGet(t *testing.T) {
 	tests := []struct {
 		name          string
+		address       string
 		jwt           string
 		serverHandler http.HandlerFunc
 		expectedData  *models.UserData
 		expectedError string
 	}{
 		{
-			name: "successful get",
-			jwt:  "valid-jwt",
+			name:    "successful get",
+			address: "",
+			jwt:     "valid-jwt",
 			serverHandler: func(w http.ResponseWriter, r *http.Request) {
 				assert.Equal(t, "/get", r.URL.Path)
 				assert.Equal(t, "GET", r.Method)
@@ -309,21 +384,40 @@ func TestHTTPClientGet(t *testing.T) {
 			expectedData: &models.UserData{},
 		},
 		{
-			name: "unauthorized",
-			jwt:  "invalid-jwt",
+			name:    "unauthorized",
+			address: "",
+			jwt:     "invalid-jwt",
 			serverHandler: func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusUnauthorized)
 			},
 			expectedError: "unexpected status code: 401",
 		},
 		{
-			name: "invalid response",
-			jwt:  "valid-jwt",
+			name:    "invalid response",
+			address: "",
+			jwt:     "valid-jwt",
 			serverHandler: func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusOK)
 				w.Write([]byte("invalid json"))
 			},
 			expectedError: "can not unmarshal body",
+		},
+		{
+			name:    "invalid address",
+			address: "\n",
+			jwt:     "valid-jwt",
+			serverHandler: func(w http.ResponseWriter, r *http.Request) {
+			},
+			expectedError: "can not create request",
+		},
+		{
+			name:    "invalid request",
+			address: "",
+			jwt:     "valid-jwt",
+			serverHandler: func(w http.ResponseWriter, r *http.Request) {
+				time.Sleep(time.Second * 2)
+			},
+			expectedError: "can not send request for get",
 		},
 	}
 
@@ -332,7 +426,17 @@ func TestHTTPClientGet(t *testing.T) {
 			server := httptest.NewServer(tt.serverHandler)
 			defer server.Close()
 
-			client := NewHTTPClient(server.URL)
+			address := server.URL
+			if tt.address != "" {
+				address = tt.address
+			}
+
+			client := HTTPClient{
+				address: address,
+				client: &http.Client{
+					Timeout: time.Second,
+				},
+			}
 			data, err := client.Get(tt.jwt)
 
 			if tt.expectedError != "" {

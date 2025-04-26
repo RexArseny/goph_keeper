@@ -2,10 +2,13 @@ package client
 
 import (
 	"context"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"testing"
 	"time"
 
+	"github.com/RexArseny/goph_keeper/internal/client/http_client"
 	"github.com/RexArseny/goph_keeper/internal/server"
 	"github.com/RexArseny/goph_keeper/internal/server/models"
 	"github.com/docker/docker/api/types/container"
@@ -177,6 +180,37 @@ COMMIT;`))
 	time.Sleep(time.Second * 5)
 
 	t.SkipNow()
+}
+
+func TestCreateDataFlex(t *testing.T) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+	server := httptest.NewServer(handler)
+	defer server.Close()
+	mockClient := http_client.NewHTTPClient(server.URL)
+	app := tview.NewApplication()
+	pages := tview.NewPages()
+	loginAndPassesTable := tview.NewTable()
+	textsTable := tview.NewTable()
+	bytesTable := tview.NewTable()
+	bankCardsTable := tview.NewTable()
+	jwt := "test-jwt"
+
+	flex, form := createDataFlex(
+		jwt,
+		mockClient,
+		app,
+		pages,
+		loginAndPassesTable,
+		textsTable,
+		bytesTable,
+		bankCardsTable,
+	)
+
+	assert.NotNil(t, flex)
+	assert.NotNil(t, form)
+	assert.Equal(t, 4, flex.GetItemCount())
 }
 
 func TestUpdateTables(t *testing.T) {

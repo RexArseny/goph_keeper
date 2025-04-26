@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/RexArseny/goph_keeper/internal/client/config"
+	"github.com/RexArseny/goph_keeper/internal/client/elements"
 	"github.com/RexArseny/goph_keeper/internal/client/http_client"
 	"github.com/RexArseny/goph_keeper/internal/server/models"
 	"github.com/gdamore/tcell/v2"
@@ -28,14 +29,6 @@ func NewClient() error {
 	var jwt string
 	var registrationRequest models.AuthRequest
 	var authRequest models.AuthRequest
-	loginAndPasses := make(map[int]models.LoginAndPass)
-	var loginAndPassItem models.LoginAndPass
-	texts := make(map[int]models.Text)
-	var textItem models.Text
-	bytes := make(map[int]models.Bytes)
-	var bytesItem models.Bytes
-	bankCards := make(map[int]models.BankCard)
-	var bankCardItem models.BankCard
 
 	app := tview.NewApplication()
 
@@ -63,312 +56,19 @@ func NewClient() error {
 		})
 
 	// --- DATA ---
-	flex := tview.NewFlex()
-
 	loginAndPassesTable := tview.NewTable().SetBorders(true).SetSelectable(true, true)
-	loginAndPassesTable.SetBorderPadding(1, 1, 1, 1)
-
-	var loginAndPassesEditing bool
-	var loginAndPassesCurrentRow int
-	var loginAndPassesCurrentCol int
-	var loginAndPassesInputField *tview.InputField
-
-	loginAndPassesInputField = tview.NewInputField().
-		SetFieldBackgroundColor(tcell.ColorBlack).
-		SetDoneFunc(func(key tcell.Key) {
-			if key == tcell.KeyEnter {
-				loginAndPassesTable.GetCell(loginAndPassesCurrentRow, loginAndPassesCurrentCol).SetText(loginAndPassesInputField.GetText())
-				loginAndPassesInputField.SetFieldBackgroundColor(tcell.ColorBlack)
-
-				var id *int
-				idString, err := strconv.Atoi(loginAndPassesTable.GetCell(loginAndPassesCurrentRow, 0).Text)
-				if err == nil {
-					id = &idString
-				}
-				loginAndPasses[loginAndPassesCurrentRow] = models.LoginAndPass{
-					ID:       id,
-					Login:    loginAndPassesTable.GetCell(loginAndPassesCurrentRow, 1).Text,
-					Password: loginAndPassesTable.GetCell(loginAndPassesCurrentRow, 2).Text,
-				}
-			}
-			loginAndPassesEditing = false
-			loginAndPassesInputField.SetText("")
-			app.SetFocus(loginAndPassesTable)
-		})
-
-	loginAndPassesTable.SetSelectedFunc(func(row, column int) {
-		if row == 0 || column == 0 || loginAndPassesEditing {
-			return
-		}
-
-		loginAndPassesCurrentRow, loginAndPassesCurrentCol = row, column
-		loginAndPassesEditing = true
-		loginAndPassesInputField.SetFieldBackgroundColor(tcell.ColorBlue).SetText(loginAndPassesTable.GetCell(row, column).Text)
-		app.SetFocus(loginAndPassesInputField)
-	})
-
-	loginAndPassesForm := tview.NewForm().
-		AddInputField("Login", "", 10, nil, func(text string) {
-			loginAndPassItem.Login = text
-		}).
-		AddInputField("Password", "", 10, nil, func(text string) {
-			loginAndPassItem.Password = text
-		}).
-		AddButton("Add", func() {
-			row := loginAndPassesTable.GetRowCount()
-			loginAndPasses[row] = models.LoginAndPass{
-				Login:    loginAndPassItem.Login,
-				Password: loginAndPassItem.Password,
-			}
-			loginAndPassesTable.SetCellSimple(row, 1, loginAndPassItem.Login).
-				SetCellSimple(row, 2, loginAndPassItem.Password)
-		})
-	loginAndPassesFlex := tview.NewFlex().SetDirection(tview.FlexRow).
-		AddItem(loginAndPassesTable, 0, 4, false).
-		AddItem(loginAndPassesForm, 12, 1, false).
-		AddItem(loginAndPassesInputField, 0, 1, false)
-
 	textsTable := tview.NewTable().SetBorders(true).SetSelectable(true, true)
-	textsTable.SetBorderPadding(1, 1, 1, 1)
-
-	var textsEditing bool
-	var textsCurrentRow int
-	var textsCurrentCol int
-	var textsInputField *tview.InputField
-
-	textsInputField = tview.NewInputField().
-		SetFieldBackgroundColor(tcell.ColorBlack).
-		SetDoneFunc(func(key tcell.Key) {
-			if key == tcell.KeyEnter {
-				textsTable.GetCell(textsCurrentRow, textsCurrentCol).SetText(textsInputField.GetText())
-				textsInputField.SetFieldBackgroundColor(tcell.ColorBlack)
-
-				var id *int
-				idString, err := strconv.Atoi(textsTable.GetCell(textsCurrentRow, 0).Text)
-				if err == nil {
-					id = &idString
-				}
-				texts[textsCurrentRow] = models.Text{
-					ID:   id,
-					Text: textsTable.GetCell(textsCurrentRow, 1).Text,
-				}
-			}
-			textsEditing = false
-			textsInputField.SetText("")
-			app.SetFocus(textsTable)
-		})
-
-	textsTable.SetSelectedFunc(func(row, column int) {
-		if row == 0 || column == 0 || textsEditing {
-			return
-		}
-
-		textsCurrentRow, textsCurrentCol = row, column
-		textsEditing = true
-		textsInputField.SetFieldBackgroundColor(tcell.ColorBlue).SetText(textsTable.GetCell(row, column).Text)
-		app.SetFocus(textsInputField)
-	})
-
-	textsForm := tview.NewForm().
-		AddInputField("Text", "", 10, nil, func(text string) {
-			textItem.Text = text
-		}).
-		AddButton("Add", func() {
-			row := textsTable.GetRowCount()
-			texts[row] = models.Text{
-				Text: textItem.Text,
-			}
-			textsTable.SetCellSimple(row, 1, textItem.Text)
-		})
-	textsFlex := tview.NewFlex().SetDirection(tview.FlexRow).
-		AddItem(textsTable, 0, 4, false).
-		AddItem(textsForm, 12, 1, false).
-		AddItem(textsInputField, 0, 1, false)
-
 	bytesTable := tview.NewTable().SetBorders(true).SetSelectable(true, true)
-	bytesTable.SetBorderPadding(1, 1, 1, 1)
-
-	var bytesEditing bool
-	var bytesCurrentRow int
-	var bytesCurrentCol int
-	var bytesInputField *tview.InputField
-
-	bytesInputField = tview.NewInputField().
-		SetFieldBackgroundColor(tcell.ColorBlack).
-		SetDoneFunc(func(key tcell.Key) {
-			if key == tcell.KeyEnter {
-				bytesTable.GetCell(bytesCurrentRow, bytesCurrentCol).SetText(bytesInputField.GetText())
-				bytesInputField.SetFieldBackgroundColor(tcell.ColorBlack)
-
-				var id *int
-				idString, err := strconv.Atoi(bytesTable.GetCell(bytesCurrentRow, 0).Text)
-				if err == nil {
-					id = &idString
-				}
-				bytes[bytesCurrentRow] = models.Bytes{
-					ID:    id,
-					Bytes: bytesTable.GetCell(bytesCurrentRow, 1).Text,
-				}
-			}
-			bytesEditing = false
-			bytesInputField.SetText("")
-			app.SetFocus(bytesTable)
-		})
-
-	bytesTable.SetSelectedFunc(func(row, column int) {
-		if row == 0 || column == 0 || bytesEditing {
-			return
-		}
-
-		bytesCurrentRow, bytesCurrentCol = row, column
-		bytesEditing = true
-		bytesInputField.SetFieldBackgroundColor(tcell.ColorBlue).SetText(bytesTable.GetCell(row, column).Text)
-		app.SetFocus(bytesInputField)
-	})
-
-	bytesForm := tview.NewForm().
-		AddInputField("Bytes", "", 10, nil, func(text string) {
-			bytesItem.Bytes = text
-		}).
-		AddButton("Add", func() {
-			row := bytesTable.GetRowCount()
-			bytes[row] = models.Bytes{
-				Bytes: bytesItem.Bytes,
-			}
-			bytesTable.SetCellSimple(row, 1, string(bytesItem.Bytes))
-		})
-	bytesFlex := tview.NewFlex().SetDirection(tview.FlexRow).
-		AddItem(bytesTable, 0, 4, false).
-		AddItem(bytesForm, 12, 1, false).
-		AddItem(bytesInputField, 0, 1, false)
-
 	bankCardsTable := tview.NewTable().SetBorders(true).SetSelectable(true, true)
-	bankCardsTable.SetBorderPadding(1, 1, 1, 1)
-
-	var bankCardsEditing bool
-	var bankCardsCurrentRow int
-	var bankCardsCurrentCol int
-	var bankCardsInputField *tview.InputField
-
-	bankCardsInputField = tview.NewInputField().
-		SetFieldBackgroundColor(tcell.ColorBlack).
-		SetDoneFunc(func(key tcell.Key) {
-			if key == tcell.KeyEnter {
-				bankCardsTable.GetCell(bankCardsCurrentRow, bankCardsCurrentCol).SetText(bankCardsInputField.GetText())
-				bankCardsInputField.SetFieldBackgroundColor(tcell.ColorBlack)
-
-				var id *int
-				idString, err := strconv.Atoi(bytesTable.GetCell(bankCardsCurrentRow, 0).Text)
-				if err == nil {
-					id = &idString
-				}
-				bankCards[bankCardsCurrentRow] = models.BankCard{
-					ID:             id,
-					Number:         bankCardsTable.GetCell(bankCardsCurrentRow, 1).Text,
-					CardHolderName: bankCardsTable.GetCell(bankCardsCurrentRow, 2).Text,
-					ExpirationDate: bankCardsTable.GetCell(bankCardsCurrentRow, 3).Text,
-					CVV:            bankCardsTable.GetCell(bankCardsCurrentRow, 4).Text,
-				}
-			}
-			bankCardsEditing = false
-			bankCardsInputField.SetText("")
-			app.SetFocus(bankCardsTable)
-		})
-
-	bankCardsTable.SetSelectedFunc(func(row, column int) {
-		if row == 0 || column == 0 || bankCardsEditing {
-			return
-		}
-
-		bankCardsCurrentRow, bankCardsCurrentCol = row, column
-		bankCardsEditing = true
-		bankCardsInputField.SetFieldBackgroundColor(tcell.ColorBlue).SetText(bankCardsTable.GetCell(row, column).Text)
-		app.SetFocus(bankCardsInputField)
-	})
-
-	bankCardsForm := tview.NewForm().
-		AddInputField("Number", "", 10, nil, func(text string) {
-			bankCardItem.Number = text
-		}).
-		AddInputField("Card holder name", "", 10, nil, func(text string) {
-			bankCardItem.CardHolderName = text
-		}).
-		AddInputField("Expiration date", "", 10, nil, func(text string) {
-			bankCardItem.ExpirationDate = text
-		}).
-		AddInputField("CVV", "", 10, nil, func(text string) {
-			bankCardItem.CVV = text
-		}).
-		AddButton("Add", func() {
-			row := bankCardsTable.GetRowCount()
-			bankCards[row] = models.BankCard{
-				Number:         bankCardItem.Number,
-				CardHolderName: bankCardItem.CardHolderName,
-				ExpirationDate: bankCardItem.ExpirationDate,
-				CVV:            bankCardItem.CVV,
-			}
-			bankCardsTable.SetCellSimple(row, 1, bankCardItem.Number).
-				SetCellSimple(row, 2, bankCardItem.CardHolderName).
-				SetCellSimple(row, 3, bankCardItem.ExpirationDate).
-				SetCellSimple(row, 4, bankCardItem.CVV)
-		})
-	bankCardsFlex := tview.NewFlex().SetDirection(tview.FlexRow).
-		AddItem(bankCardsTable, 0, 4, false).
-		AddItem(bankCardsForm, 12, 1, false).
-		AddItem(bankCardsInputField, 0, 1, false)
-
-	flex.AddItem(loginAndPassesFlex, 0, 1, false).
-		AddItem(textsFlex, 0, 1, false).
-		AddItem(bytesFlex, 0, 1, false).
-		AddItem(bankCardsFlex, 0, 1, false)
-
-	dataErrorText := tview.NewTextView().SetSize(1, 1000)
-	form := tview.NewForm().
-		AddFormItem(dataErrorText).
-		AddButton("Sync", func() {
-			dataErrorText.SetLabel("").SetText("")
-
-			var userData models.UserData
-			for _, item := range loginAndPasses {
-				userData.LoginAndPasses = append(userData.LoginAndPasses, item)
-			}
-			for _, item := range texts {
-				userData.Texts = append(userData.Texts, item)
-			}
-			for _, item := range bytes {
-				userData.Bytes = append(userData.Bytes, item)
-			}
-			for _, item := range bankCards {
-				userData.BankCards = append(userData.BankCards, item)
-			}
-			clear(loginAndPasses)
-			clear(texts)
-			clear(bytes)
-			clear(bankCards)
-			err := client.Sync(userData, jwt)
-			if err != nil {
-				dataErrorText.SetLabel("Error").SetText(err.Error())
-				return
-			}
-
-			data, err := client.Get(jwt)
-			if err != nil {
-				dataErrorText.SetLabel("Error").SetText(err.Error())
-				return
-			}
-			if data != nil {
-				updateTables(
-					loginAndPassesTable,
-					textsTable,
-					bytesTable,
-					bankCardsTable,
-					*data)
-			}
-		}).
-		AddButton("Back", func() {
-			pages.SwitchToPage("Menu")
-		})
-
+	flex, form := createDataFlex(
+		jwt,
+		client,
+		app,
+		pages,
+		loginAndPassesTable,
+		textsTable,
+		bytesTable,
+		bankCardsTable)
 	data.AddItem(flex, 0, 4, false).AddItem(form, 0, 1, false)
 
 	// --- REGISTRATION ---
@@ -459,6 +159,230 @@ func NewClient() error {
 	}
 
 	return nil
+}
+
+func createDataFlex(
+	jwt string,
+	client http_client.HTTPClient,
+	app *tview.Application,
+	pages *tview.Pages,
+	loginAndPassesTable *tview.Table,
+	textsTable *tview.Table,
+	bytesTable *tview.Table,
+	bankCardsTable *tview.Table,
+) (*tview.Flex, *tview.Form) {
+	var loginAndPassItem models.LoginAndPass
+	var textItem models.Text
+	var bytesItem models.Bytes
+	var bankCardItem models.BankCard
+
+	flex := tview.NewFlex()
+
+	loginAndPassesTable.SetBorderPadding(1, 1, 1, 1)
+
+	loginAndPassesData := elements.LoginAndPassesData{
+		App:            app,
+		Table:          loginAndPassesTable,
+		InputField:     &tview.InputField{},
+		LoginAndPasses: make(map[int]models.LoginAndPass),
+		Editing:        false,
+		CurrentRow:     0,
+		CurrentCol:     0,
+	}
+
+	loginAndPassesData.InputField = tview.NewInputField().
+		SetFieldBackgroundColor(tcell.ColorBlack).
+		SetDoneFunc(loginAndPassesData.Done)
+
+	loginAndPassesTable.SetSelectedFunc(loginAndPassesData.Selected)
+
+	loginAndPassesForm := tview.NewForm().
+		AddInputField("Login", "", 10, nil, func(text string) {
+			loginAndPassItem.Login = text
+		}).
+		AddInputField("Password", "", 10, nil, func(text string) {
+			loginAndPassItem.Password = text
+		}).
+		AddButton("Add", func() {
+			row := loginAndPassesTable.GetRowCount()
+			loginAndPassesData.LoginAndPasses[row] = models.LoginAndPass{
+				Login:    loginAndPassItem.Login,
+				Password: loginAndPassItem.Password,
+			}
+			loginAndPassesTable.SetCellSimple(row, 1, loginAndPassItem.Login).
+				SetCellSimple(row, 2, loginAndPassItem.Password)
+		})
+	loginAndPassesFlex := tview.NewFlex().SetDirection(tview.FlexRow).
+		AddItem(loginAndPassesTable, 0, 4, false).
+		AddItem(loginAndPassesForm, 12, 1, false).
+		AddItem(loginAndPassesData.InputField, 0, 1, false)
+
+	textsTable.SetBorderPadding(1, 1, 1, 1)
+
+	textsData := elements.TextsData{
+		App:        app,
+		Table:      loginAndPassesTable,
+		InputField: &tview.InputField{},
+		Texts:      make(map[int]models.Text),
+		Editing:    false,
+		CurrentRow: 0,
+		CurrentCol: 0,
+	}
+
+	textsData.InputField = tview.NewInputField().
+		SetFieldBackgroundColor(tcell.ColorBlack).
+		SetDoneFunc(textsData.Done)
+
+	textsTable.SetSelectedFunc(textsData.Selected)
+
+	textsForm := tview.NewForm().
+		AddInputField("Text", "", 10, nil, func(text string) {
+			textItem.Text = text
+		}).
+		AddButton("Add", func() {
+			row := textsTable.GetRowCount()
+			textsData.Texts[row] = models.Text{
+				Text: textItem.Text,
+			}
+			textsTable.SetCellSimple(row, 1, textItem.Text)
+		})
+	textsFlex := tview.NewFlex().SetDirection(tview.FlexRow).
+		AddItem(textsTable, 0, 4, false).
+		AddItem(textsForm, 12, 1, false).
+		AddItem(textsData.InputField, 0, 1, false)
+
+	bytesTable.SetBorderPadding(1, 1, 1, 1)
+
+	bytesData := elements.BytesData{
+		App:        app,
+		Table:      loginAndPassesTable,
+		InputField: tview.NewInputField(),
+		Bytes:      make(map[int]models.Bytes),
+		Editing:    false,
+		CurrentRow: 0,
+		CurrentCol: 0,
+	}
+
+	bytesData.InputField.SetFieldBackgroundColor(tcell.ColorBlack).SetDoneFunc(bytesData.Done)
+
+	bytesTable.SetSelectedFunc(bytesData.Selected)
+
+	bytesForm := tview.NewForm().
+		AddInputField("Bytes", "", 10, nil, func(text string) {
+			bytesItem.Bytes = text
+		}).
+		AddButton("Add", func() {
+			row := bytesTable.GetRowCount()
+			bytesData.Bytes[row] = models.Bytes{
+				Bytes: bytesItem.Bytes,
+			}
+			bytesTable.SetCellSimple(row, 1, string(bytesItem.Bytes))
+		})
+	bytesFlex := tview.NewFlex().SetDirection(tview.FlexRow).
+		AddItem(bytesTable, 0, 4, false).
+		AddItem(bytesForm, 12, 1, false).
+		AddItem(bytesData.InputField, 0, 1, false)
+
+	bankCardsTable.SetBorderPadding(1, 1, 1, 1)
+
+	bankCardsData := elements.BankCardsData{
+		App:        app,
+		Table:      loginAndPassesTable,
+		InputField: tview.NewInputField(),
+		BankCards:  make(map[int]models.BankCard),
+		Editing:    false,
+		CurrentRow: 0,
+		CurrentCol: 0,
+	}
+
+	bankCardsData.InputField.SetFieldBackgroundColor(tcell.ColorBlack).SetDoneFunc(bankCardsData.Done)
+
+	bankCardsTable.SetSelectedFunc(bankCardsData.Selected)
+
+	bankCardsForm := tview.NewForm().
+		AddInputField("Number", "", 10, nil, func(text string) {
+			bankCardItem.Number = text
+		}).
+		AddInputField("Card holder name", "", 10, nil, func(text string) {
+			bankCardItem.CardHolderName = text
+		}).
+		AddInputField("Expiration date", "", 10, nil, func(text string) {
+			bankCardItem.ExpirationDate = text
+		}).
+		AddInputField("CVV", "", 10, nil, func(text string) {
+			bankCardItem.CVV = text
+		}).
+		AddButton("Add", func() {
+			row := bankCardsTable.GetRowCount()
+			bankCardsData.BankCards[row] = models.BankCard{
+				Number:         bankCardItem.Number,
+				CardHolderName: bankCardItem.CardHolderName,
+				ExpirationDate: bankCardItem.ExpirationDate,
+				CVV:            bankCardItem.CVV,
+			}
+			bankCardsTable.SetCellSimple(row, 1, bankCardItem.Number).
+				SetCellSimple(row, 2, bankCardItem.CardHolderName).
+				SetCellSimple(row, 3, bankCardItem.ExpirationDate).
+				SetCellSimple(row, 4, bankCardItem.CVV)
+		})
+	bankCardsFlex := tview.NewFlex().SetDirection(tview.FlexRow).
+		AddItem(bankCardsTable, 0, 4, false).
+		AddItem(bankCardsForm, 12, 1, false).
+		AddItem(bankCardsData.InputField, 0, 1, false)
+
+	flex.AddItem(loginAndPassesFlex, 0, 1, false).
+		AddItem(textsFlex, 0, 1, false).
+		AddItem(bytesFlex, 0, 1, false).
+		AddItem(bankCardsFlex, 0, 1, false)
+
+	dataErrorText := tview.NewTextView().SetSize(1, 1000)
+	form := tview.NewForm().
+		AddFormItem(dataErrorText).
+		AddButton("Sync", func() {
+			dataErrorText.SetLabel("").SetText("")
+
+			var userData models.UserData
+			for _, item := range loginAndPassesData.LoginAndPasses {
+				userData.LoginAndPasses = append(userData.LoginAndPasses, item)
+			}
+			for _, item := range textsData.Texts {
+				userData.Texts = append(userData.Texts, item)
+			}
+			for _, item := range bytesData.Bytes {
+				userData.Bytes = append(userData.Bytes, item)
+			}
+			for _, item := range bankCardsData.BankCards {
+				userData.BankCards = append(userData.BankCards, item)
+			}
+			clear(loginAndPassesData.LoginAndPasses)
+			clear(textsData.Texts)
+			clear(bytesData.Bytes)
+			clear(bankCardsData.BankCards)
+			err := client.Sync(userData, jwt)
+			if err != nil {
+				dataErrorText.SetLabel("Error").SetText(err.Error())
+				return
+			}
+
+			data, err := client.Get(jwt)
+			if err != nil {
+				dataErrorText.SetLabel("Error").SetText(err.Error())
+				return
+			}
+			if data != nil {
+				updateTables(
+					loginAndPassesTable,
+					textsTable,
+					bytesTable,
+					bankCardsTable,
+					*data)
+			}
+		}).
+		AddButton("Back", func() {
+			pages.SwitchToPage("Menu")
+		})
+
+	return flex, form
 }
 
 func updateTables(
