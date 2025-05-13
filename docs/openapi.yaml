@@ -1,0 +1,246 @@
+openapi: 3.0.4
+info:
+  title: Goph keeper
+  version: 1.0.0
+paths:
+  /registration:
+    post:
+      summary: Registration.
+      description: Registration of new user.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthRequest'
+      responses:
+        '200':
+          description: Successful registration
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          description: Invalid input data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        '409':
+          description: User already exist
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        '500':
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /auth:
+    post:
+      summary: Auth.
+      description: Auth with credentials.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthRequest'
+      responses:
+        '200':
+          description: Successful auth
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          description: Invalid input data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        '401':
+          description: Invalid username or password
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        '500':
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /sync:
+    post:
+      summary: Sync.
+      description: Sync data with server.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserData'
+      responses:
+        '200':
+          description: Successful sync
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Status'
+        '400':
+          description: Invalid input data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        '401':
+          description: Invalid token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        '500':
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      security:
+        - bearerHttpAuthentication: []
+  /get:
+    get:
+      summary: Get.
+      description: Get user data.
+      responses:
+        '200':
+          description: Successful get
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserData'
+        '400':
+          description: Invalid input data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        '401':
+          description: Invalid token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        '500':
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      security:
+        - bearerHttpAuthentication: []
+
+components:
+  schemas:
+    AuthRequest:
+      type: object
+      properties:
+        username:
+          type: string
+          example: 'username'
+        password:
+          type: string
+          example: 'password'
+    AuthResponse:
+      type: object
+      properties:
+        jwt:
+          type: string
+          example: 'token'
+    UserData:
+      type: object
+      properties:
+        login_and_passes:
+          type: array
+          items:
+            $ref: '#/components/schemas/LoginAndPass'
+        texts:
+          type: array
+          items:
+            $ref: '#/components/schemas/Text'
+        bytes:
+          type: array
+          items:
+            $ref: '#/components/schemas/Bytes'
+        bank_cards:
+          type: array
+          items:
+            $ref: '#/components/schemas/BankCard'
+    LoginAndPass:
+      type: object
+      properties:
+        id:
+          type: string
+          example: '1'
+        login:
+          type: string
+          example: 'login'
+        password:
+          type: string
+          example: 'password'
+    Text:
+      type: object
+      properties:
+        id:
+          type: string
+          example: '1'
+        text:
+          type: string
+          example: 'text'
+    Bytes:
+      type: object
+      properties:
+        id:
+          type: string
+          example: '1'
+        bytes:
+          type: string
+          example: '123'
+    BankCard:
+      type: object
+      properties:
+        id:
+          type: string
+          example: '1'
+        number:
+          type: string
+          example: '123'
+        card_holder_name:
+          type: string
+          example: 'name'
+        expiration_date:
+          type: string
+          example: '01/01'
+        cvv:
+          type: string
+          example: '111'
+    Status:
+      type: object
+      properties:
+        status:
+          type: string
+          example: 'OK'
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          example: 'Internal Server Error'
+  securitySchemes:
+    bearerHttpAuthentication:
+      description: Bearer token using a JWT
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
